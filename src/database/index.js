@@ -1,4 +1,3 @@
-/* eslint-disable array-callback-return */
 import Sequelize from 'sequelize';
 import databaseConfig from '../config/database';
 
