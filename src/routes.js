@@ -16,6 +16,6 @@ routes.post('/users', UserController.store);
 routes.post('/session', SessionController.store);
 
 routes.use(authMiddleware); // para todas as rotas abaixo
-routes.put('/users', UserController.update);
+routes.put('/users2', UserController.update);
 
 export default routes;
