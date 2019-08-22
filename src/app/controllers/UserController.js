@@ -1,3 +1,4 @@
+import { rejects } from 'assert';
 import User from '../models/User';
 
 class UserController {
@@ -13,6 +14,11 @@ class UserController {
       name,
       email,
     });
+  }
+
+  async update(req, res) {
+    console.log(req.userId);
+    return res.json(true);
   }
 }
 
