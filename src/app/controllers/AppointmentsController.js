@@ -1,10 +1,43 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore } from 'date-fns';
+import { startOfHour, parseISO, isBefore, format } from 'date-fns';
+import pt from 'date-fns/locale/pt';
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import File from '../models/Files';
 
+import notification from '../schemas/Notification';
+
 class AppointmentController {
+  async index(req, res) {
+    const { page = 1 } = req.query;
+
+    const appointments = await Appointment.findAll({
+      where: {
+        user_id: req.userId,
+        canceled_at: null,
+      },
+      limit: 20,
+      offset: (page - 1) * 20,
+      attributes: ['id', 'date'],
+      order: ['date'],
+      include: [
+        {
+          model: User,
+          as: 'provider',
+          attributes: ['id', 'name'],
+          include: [
+            {
+              model: File,
+              as: 'avatar',
+              attributes: ['id', 'path', 'url'],
+            },
+          ],
+        },
+      ],
+    });
+    return res.json(appointments);
+  }
+
   async store(req, res) {
     const schema = Yup.object().shape({
       provider_id: Yup.number().required(),
@@ -29,10 +62,20 @@ class AppointmentController {
         .status(401)
         .json({ error: 'You can only create appointments with providers' });
     }
+
+    /**
+     * check if user id is equal to provider id
+     */
+
+    if (req.userId === provider_id) {
+      return res
+        .status(400)
+        .json({ error: 'You cannot appointment with yourself' });
+    }
+
     /*
      * Check for past dates
      */
-
     const hourStart = startOfHour(parseISO(date));
 
     if (isBefore(hourStart, new Date())) {
@@ -62,36 +105,19 @@ class AppointmentController {
       date,
     });
 
-    return res.json(appointments);
-  }
-
-  async index(req, res) {
-    const { page = 1 } = req.query;
-
-    const appointments = await Appointment.findAll({
-      where: {
-        user_id: req.userId,
-        canceled_at: null,
-      },
-      limit: 20,
-      offset: (page - 1) * 20,
-      attributes: ['id', 'date'],
-      order: ['date'],
-      include: [
-        {
-          model: User,
-          as: 'provider',
-          attributes: ['id', 'name'],
-          include: [
-            {
-              model: File,
-              as: 'avatar',
-              attributes: ['id', 'path', 'url'],
-            },
-          ],
-        },
-      ],
+    /**
+     * Notify appointment provider
+     */
+    const user = await User.findByPk(req.userId);
+    const formatedDate = format(hourStart, "'dia' dd 'de' MMMM', ás' H:mm'h'", {
+      locale: pt,
     });
+
+    await notification.create({
+      content: `Novo agendamento de ${user.name} para o ${formatedDate}`,
+      user: provider_id,
+    });
+
     return res.json(appointments);
   }
 }

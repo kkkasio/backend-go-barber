@@ -13,6 +13,7 @@ import SessionController from './app/controllers/SessionController';
 import ProviderController from './app/controllers/ProviderController';
 import AppointmentsController from './app/controllers/AppointmentsController';
 import ScheduleController from './app/controllers/ScheduleController';
+import NotificationController from './app/controllers/NotificationController';
 
 const upload = multer(multerConfig);
 const routes = new Router();
@@ -29,5 +30,7 @@ routes.post('/appointments', AppointmentsController.store);
 routes.get('/appointments', AppointmentsController.index);
 
 routes.get('/schedule', ScheduleController.index);
+
+routes.get('/notifications', NotificationController.index);
 
 export default routes;
